@@ -3,88 +3,154 @@ namespace detail {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template <StateID TStateID,
+template <typename TIndices,
 		  typename TArgs,
 		  typename THead>
-struct _S {
-	static constexpr StateID STATE_ID = TStateID;
+struct S_ final {
+	static constexpr auto STATE_ID	 = TIndices::STATE_ID;
 
-	using Args			= TArgs;
-	using Head			= THead;
+	using Context		= typename TArgs::Context;
 
-	using UProng		= typename Args::UProng;
-	using Payload		= typename Args::Payload;
-
-	using Request		= RequestT<Payload>;
-	using RequestType	= typename Request::Type;
-
-	using Control		= ControlT<Args>;
-	using StateRegistry	= StateRegistryT<Args>;
-	using StateParents	= typename StateRegistry::StateParents;
-
-	using PlanControl	= PlanControlT<Args>;
-	using ScopedOrigin	= typename PlanControl::Origin;
-
-	using FullControl	= FullControlT <Args>;
-	using GuardControl	= GuardControlT<Args>;
-
-	using Empty			= ::hfsm2::detail::Empty<Args>;
-
-	HFSM_INLINE void   deepRegister			(StateRegistry& stateRegistry, const Parent parent);
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	HFSM_INLINE bool   deepForwardEntryGuard(GuardControl&,								const ShortIndex = INVALID_SHORT_INDEX)	{ return false; }
-	HFSM_INLINE bool   deepEntryGuard		(GuardControl& control,						const ShortIndex = INVALID_SHORT_INDEX);
-
-	HFSM_INLINE void   deepEnter			(PlanControl& control,						const ShortIndex = INVALID_SHORT_INDEX);
-
-	HFSM_INLINE Status deepUpdate			(FullControl& control,						const ShortIndex = INVALID_SHORT_INDEX);
-
-	template <typename TEvent>
-	HFSM_INLINE Status deepReact			(FullControl& control, const TEvent& event, const ShortIndex = INVALID_SHORT_INDEX);
-
-	HFSM_INLINE bool   deepForwardExitGuard	(GuardControl&,								const ShortIndex = INVALID_SHORT_INDEX)	{ return false; }
-	HFSM_INLINE bool   deepExitGuard		(GuardControl& control,						const ShortIndex = INVALID_SHORT_INDEX);
-
-	HFSM_INLINE void   deepExit				(PlanControl& control,						const ShortIndex = INVALID_SHORT_INDEX);
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	HFSM_INLINE void   wrapPlanSucceeded	(FullControl& control);
-	HFSM_INLINE void   wrapPlanFailed		(FullControl& control);
-	HFSM_INLINE UProng wrapUtility			(Control& control);
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	HFSM_INLINE void   deepForwardActive	(Control&,				const RequestType,	const ShortIndex = INVALID_SHORT_INDEX)	{}
-	HFSM_INLINE void   deepForwardRequest	(Control&,				const RequestType,	const ShortIndex = INVALID_SHORT_INDEX)	{}
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	HFSM_INLINE UProng deepRequestChange	(Control&,									const ShortIndex = INVALID_SHORT_INDEX)	{ return {}; }
-	HFSM_INLINE UProng deepReportChange		(Control& control,							const ShortIndex = INVALID_SHORT_INDEX)	{ return wrapUtility(control);	}
-
-	HFSM_INLINE void   deepRequestRemain	(StateRegistry&)																	{}
-	HFSM_INLINE void   deepRequestRestart	(StateRegistry&)																	{}
-	HFSM_INLINE void   deepRequestResume	(StateRegistry&,							const ShortIndex = INVALID_SHORT_INDEX)	{}
-
-	HFSM_INLINE void   deepRequestUtilize	(Control&)																			{}
-	HFSM_INLINE UProng deepReportUtilize	(Control& control)																	{ return wrapUtility(control);	}
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	HFSM_INLINE void   deepEnterRequested	(Control&,									const ShortIndex = INVALID_SHORT_INDEX)	{}
-	HFSM_INLINE void   deepChangeToRequested(Control&,									const ShortIndex = INVALID_SHORT_INDEX)	{}
-
-#if defined _DEBUG || defined HFSM_ENABLE_STRUCTURE_REPORT || defined HFSM_ENABLE_LOG_INTERFACE
-	static constexpr bool isBare()	 { return std::is_same<Head, Empty>::value;	 }
-
-	static constexpr LongIndex NAME_COUNT = isBare() ? 0 : 1;
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	using Rank			= typename TArgs::Rank;
+	using Utility		= typename TArgs::Utility;
+	using UP			= typename TArgs::UP;
 #endif
 
-#ifdef HFSM_ENABLE_STRUCTURE_REPORT
-	using RegionType		= typename StructureStateInfo::RegionType;
+#ifdef HFSM2_ENABLE_LOG_INTERFACE
+	using Logger		= typename TArgs::Logger;
+#endif
+
+	using Control		= ControlT<TArgs>;
+	using Registry		= RegistryT<TArgs>;
+	using StateParents	= typename Registry::StateParents;
+
+	using PlanControl	= PlanControlT<TArgs>;
+	using ScopedOrigin	= typename PlanControl::Origin;
+
+	using FullControl	= FullControlT <TArgs>;
+	using GuardControl	= GuardControlT<TArgs>;
+
+	using Head			= THead;
+	using HeadBox		= Boxify<Head, TArgs>;
+
+	//----------------------------------------------------------------------
+
+#ifdef HFSM2_EXPLICIT_MEMBER_SPECIALIZATION
+#ifdef __clang__
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Wnull-dereference"
+#endif
+
+	template <typename T>
+	struct Accessor {
+		HFSM2_INLINE static		  T&	   get(		 S_&  )			{ HFSM2_BREAK(); return *reinterpret_cast<T*>(0);		}
+		HFSM2_INLINE static const T&	   get(const S_&  )			{ HFSM2_BREAK(); return *reinterpret_cast<T*>(0);		}
+	};
+
+#ifdef __clang__
+	#pragma clang diagnostic pop
+#endif
+
+	template <>
+	struct Accessor<Head> {
+		HFSM2_INLINE static		  Head& get(	  S_& s)			{ return s._headBox.get();								}
+		HFSM2_INLINE static const Head& get(const S_& s)			{ return s._headBox.get();								}
+	};
+
+	template <typename T>
+	HFSM2_INLINE	   T& access()									{ return Accessor<T>::get(*this);						}
+
+	template <typename T>
+	HFSM2_INLINE const T& access() const							{ return Accessor<T>::get(*this);						}
+#endif
+
+	//----------------------------------------------------------------------
+
+	HFSM2_INLINE Parent	 stateParent		  (Control& control)	{ return control._registry.stateParents[STATE_ID];		}
+
+	HFSM2_INLINE void	 deepRegister		  (Registry& registry, const Parent parent);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	HFSM2_INLINE Rank	 wrapRank			  (Control&  control);
+	HFSM2_INLINE Utility wrapUtility		  (Control&  control);
+#endif
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE bool	 deepForwardEntryGuard(GuardControl&)												{ return false;	}
+	HFSM2_INLINE bool	 deepEntryGuard		  (GuardControl& control);
+
+	HFSM2_INLINE void	 deepConstruct		  (PlanControl&  control);
+
+	HFSM2_INLINE void	 deepEnter			  (PlanControl&  control);
+	HFSM2_INLINE void	 deepReenter		  (PlanControl&  control);
+
+	HFSM2_INLINE Status	 deepUpdate			  (FullControl&  control);
+
+	template <typename TEvent>
+	HFSM2_INLINE Status	 deepReact			  (FullControl&	 control, const TEvent& event);
+
+	HFSM2_INLINE bool	 deepForwardExitGuard (GuardControl&)												{ return false; }
+	HFSM2_INLINE bool	 deepExitGuard		  (GuardControl& control);
+
+	HFSM2_INLINE void	 deepExit			  (PlanControl&	 control);
+
+	HFSM2_INLINE void	 deepDestruct		  (PlanControl&  control);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_ENABLE_PLANS
+	HFSM2_INLINE void	 wrapPlanSucceeded	  (FullControl&	control);
+	HFSM2_INLINE void	 wrapPlanFailed		  (FullControl&	control);
+#endif
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 deepForwardActive	  (Control&, const Request::Type)												{}
+	HFSM2_INLINE void	 deepForwardRequest	  (Control&, const Request::Type)												{}
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 deepRequestChange	  (Control&)																	{}
+	HFSM2_INLINE void	 deepRequestRemain	  (Registry&)																	{}
+	HFSM2_INLINE void	 deepRequestRestart	  (Registry&)																	{}
+	HFSM2_INLINE void	 deepRequestResume	  (Registry&)																	{}
+
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	HFSM2_INLINE void	 deepRequestUtilize	  (Control&)																	{}
+	HFSM2_INLINE void	 deepRequestRandomize (Control&)																	{}
+
+	HFSM2_INLINE UP		 deepReportChange	  (Control& control);
+	HFSM2_INLINE UP		 deepReportUtilize	  (Control& control);
+	HFSM2_INLINE Rank	 deepReportRank		  (Control& control);
+	HFSM2_INLINE Utility deepReportRandomize  (Control& control);
+#endif
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	deepChangeToRequested(Control&)																		{}
+
+	//----------------------------------------------------------------------
+
+#ifdef HFSM2_ENABLE_SERIALIZATION
+	using WriteStream	= typename TArgs::WriteStream;
+	using ReadStream	= typename TArgs::ReadStream;
+
+	HFSM2_INLINE void	 deepSaveActive	  (const Registry&, WriteStream&) const												{}
+	HFSM2_INLINE void	 deepSaveResumable(const Registry&, WriteStream&) const												{}
+
+	HFSM2_INLINE void	 deepLoadRequested(		 Registry&, ReadStream& ) const												{}
+	HFSM2_INLINE void	 deepLoadResumable(		 Registry&, ReadStream& ) const												{}
+#endif
+
+	//------------------------------------------------------------------------------
+
+#ifdef HFSM2_ENABLE_STRUCTURE_REPORT
+	using StructureStateInfos = typename TArgs::StructureStateInfos;
+	using RegionType		  = typename StructureStateInfo::RegionType;
 
 	static const char* name();
 
@@ -94,33 +160,75 @@ struct _S {
 					  StructureStateInfos& stateInfos) const;
 #endif
 
-#ifdef HFSM_ENABLE_LOG_INTERFACE
-	template <typename>
-	struct MemberTraits;
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	template <typename TReturn, typename TState, typename... Ts>
-	struct MemberTraits<TReturn(TState::*)(Ts...)> {
-		using State = TState;
-	};
+#if defined _DEBUG || defined HFSM2_ENABLE_STRUCTURE_REPORT || defined HFSM2_ENABLE_LOG_INTERFACE
 
-	template <typename TMethodType, Method>
-	typename std::enable_if< std::is_same<typename MemberTraits<TMethodType>::State, Empty>::value>::type
-	log(LoggerInterface&) const {}
+	static constexpr LongIndex NAME_COUNT = HeadBox::isBare() ? 0 : 1;
 
-	template <typename TMethodType, Method TMethodId>
-	typename std::enable_if<!std::is_same<typename MemberTraits<TMethodType>::State, Empty>::value>::type
-	log(LoggerInterface& logger) const {
-		logger.recordMethod(STATE_ID, TMethodId);
-	}
 #endif
 
-	// if you see..
-	// VS	 - error C2079: 'hfsm2::detail::_S<BLAH>::_head' uses undefined struct 'Blah'
-	// Clang - error : field has incomplete type 'hfsm2::detail::_S<BLAH>::Head' (aka 'Blah')
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_ENABLE_LOG_INTERFACE
+
+	template <typename>
+	struct Traits_;
+
+	template <typename TR_, typename TH_, typename... TAs_>
+	struct Traits_<TR_(TH_::*)(TAs_...)> {
+		using Host = TH_;
+	};
+
+	template <typename TM_>
+	using Host_			= typename Traits_<TM_>::Host;
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	using Empty			= EmptyT<TArgs>;
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	template <typename TMethodType>
+	typename std::enable_if<
+				 std::is_same<
+					 Host_<TMethodType>,
+					 Empty
+				 >::value
+			 >::type
+	log(Logger&,
+		Context&,
+		const Method) const
+	{}
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	template <typename TMethodType>
+	typename std::enable_if<
+				 !std::is_same<
+					 Host_<TMethodType>,
+					 Empty
+				 >::value
+			 >::type
+	log(Logger& logger,
+		Context& context,
+		const Method method) const
+	{
+		logger.recordMethod(context, STATE_ID, method);
+	}
+
+#endif
+
+	//----------------------------------------------------------------------
+
+	// TODO: account for boxing
 	//
-	// .. remember to add definition for the state 'Blah'
-	Head _head;
-	HFSM_IF_DEBUG(const std::type_index TYPE = isBare() ? typeid(None) : typeid(Head));
+	// if you see..
+	// VS	 - error C2079: 'hfsm2::detail::S_<...>::_head' uses undefined struct 'Blah'
+	// Clang - error : field has incomplete type 'hfsm2::detail::S_<...>::Head' (aka 'Blah')
+	//
+	// .. add definition for the state 'Blah'
+	HeadBox _headBox;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

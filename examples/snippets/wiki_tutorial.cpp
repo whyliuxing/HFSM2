@@ -1,7 +1,9 @@
-// HFSM (hierarchical state machine for games and interactive applications)
+// HFSM2 (hierarchical state machine for games and interactive applications)
 // Created by Andrew Gresyk
 
+#define HFSM2_ENABLE_PLANS
 #include <hfsm2/machine.hpp>
+
 #include <catch2/catch.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -10,9 +12,7 @@ struct Context {
     bool powerOn;
 };
 
-//------------------------------------------------------------------------------
-
-using M = hfsm2::MachineT<Context>;
+using M = hfsm2::MachineT<hfsm2::Config::ContextT<Context>>;
 
 //------------------------------------------------------------------------------
 
@@ -49,10 +49,10 @@ struct On
     void enter(PlanControl& control) {                 // called on state activation
         auto plan = control.plan();                    // access the plan for the region
 
-        plan.append<Red, Yellow>();                    // sequence plan steps, executed when the previous state succeeds
-        plan.append<Yellow, Green>();
-        plan.append<Green, Yellow>();
-        plan.append<Yellow, Red>();
+        plan.change<Red, Yellow>();                    // sequence plan steps, executed when the previous state succeeds
+        plan.change<Yellow, Green>();
+        plan.change<Green, Yellow>();
+        plan.change<Yellow, Red>();
     }
 
     void exit(PlanControl& /*control*/) {}             // called on state deactivation
@@ -95,7 +95,7 @@ struct Done
 
 //------------------------------------------------------------------------------
 
-TEST_CASE("Tutorial", "[Wiki]") {
+TEST_CASE("Wiki.Tutorial", "[Wiki]") {
     Context context;
     context.powerOn = true;
 

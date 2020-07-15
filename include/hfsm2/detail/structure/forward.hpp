@@ -1,312 +1,389 @@
-﻿#pragma once
-
-namespace hfsm2 {
+﻿namespace hfsm2 {
 namespace detail {
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename>
-struct _SF;
+struct SI_;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-template <RegionStrategy, typename, typename...>
-struct _CF;
+template <Strategy, typename, typename...>
+struct CI_;
 
 template <typename...>
-struct _CSF;
+struct CSI_;
 
 template <typename TInitial, typename... TRemaining>
-struct _CSF<TInitial, TRemaining...>;
+struct CSI_<TInitial, TRemaining...>;
 
 template <typename TInitial>
-struct _CSF<TInitial>;
+struct CSI_<TInitial>;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 template <typename, typename...>
-struct _OF;
+struct OI_;
 
 template <typename...>
-struct _OSF;
+struct OSI_;
 
 template <typename TInitial, typename... TRemaining>
-struct _OSF<TInitial, TRemaining...>;
+struct OSI_<TInitial, TRemaining...>;
 
 template <typename TInitial>
-struct _OSF<TInitial>;
+struct OSI_<TInitial>;
 
 //------------------------------------------------------------------------------
 
 template <typename...>
-struct WrapT;
+struct WrapInfoT;
 
 template <typename TH>
-struct WrapT<TH> {
-	using Type = _SF<TH>;
+struct WrapInfoT<	 TH> {
+	using Type = SI_<TH>;
 };
 
-template <RegionStrategy TG, typename TH, typename... TS>
-struct WrapT<	 _CF<TG, TH, TS...>> {
-	using Type = _CF<TG, TH, TS...>;
-};
-
-template <typename... TS>
-struct WrapT<	 _OF<TS...>> {
-	using Type = _OF<TS...>;
+template <Strategy SG, typename TH, typename... TS>
+struct WrapInfoT<	 CI_<SG, TH, TS...>> {
+	using Type =	 CI_<SG, TH, TS...>;
 };
 
 template <typename... TS>
-using Wrap = typename WrapT<TS...>::Type;
+struct WrapInfoT<	 OI_<TS...>> {
+	using Type =	 OI_<TS...>;
+};
+
+template <typename... TS>
+using WrapInfo = typename WrapInfoT<TS...>::Type;
 
 //------------------------------------------------------------------------------
 
 template <typename THead>
-struct _SF final {
+struct SI_ final {
 	using Head				= THead;
-	using StateList			= _TL<Head>;
-	using RegionList		= _TL<>;
+	using StateList			= ITL_<Head>;
+	using RegionList		= ITL_<>;
 
-	static constexpr ShortIndex WIDTH		  = 1;
-	static constexpr LongIndex  REVERSE_DEPTH = 1;
-	static constexpr ShortIndex COMPO_COUNT	  = 0;
-	static constexpr ShortIndex ORTHO_COUNT	  = 0;
-	static constexpr ShortIndex ORTHO_UNITS	  = 0;
-	static constexpr LongIndex  PRONG_COUNT	  = 0;
+	static constexpr ShortIndex WIDTH			= 1;
+	static constexpr LongIndex  REVERSE_DEPTH	= 1;
+	static constexpr ShortIndex COMPO_REGIONS	= 0;
+	static constexpr LongIndex  COMPO_PRONGS	= 0;
+	static constexpr ShortIndex ORTHO_REGIONS	= 0;
+	static constexpr ShortIndex ORTHO_UNITS		= 0;
 
-	static constexpr LongIndex  STATE_COUNT	  = StateList::SIZE;
-	static constexpr ShortIndex REGION_COUNT  = RegionList::SIZE;
+	static constexpr LongIndex  ACTIVE_BITS		= 0;
+	static constexpr LongIndex  RESUMABLE_BITS	= 0;
+
+	static constexpr LongIndex  STATE_COUNT		= StateList::SIZE;
+	static constexpr ShortIndex REGION_COUNT	= RegionList::SIZE;
 };
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 template <typename TInitial, typename... TRemaining>
-struct _CSF<TInitial, TRemaining...> {
-	using Initial			= Wrap<TInitial>;
-	using Remaining			= _CSF<TRemaining...>;
+struct CSI_<TInitial, TRemaining...> {
+	using Initial			= WrapInfo<TInitial>;
+	using Remaining			= CSI_<TRemaining...>;
 	using StateList			= Merge<typename Initial::StateList,  typename Remaining::StateList>;
 	using RegionList		= Merge<typename Initial::RegionList, typename Remaining::RegionList>;
 
-	static constexpr LongIndex  REVERSE_DEPTH = Max<Initial::REVERSE_DEPTH, Remaining::REVERSE_DEPTH>::VALUE;
-	static constexpr ShortIndex COMPO_COUNT	  =		Initial::COMPO_COUNT +	Remaining::COMPO_COUNT;
-	static constexpr ShortIndex ORTHO_COUNT	  =		Initial::ORTHO_COUNT +	Remaining::ORTHO_COUNT;
-	static constexpr ShortIndex ORTHO_UNITS	  =		Initial::ORTHO_UNITS +	Remaining::ORTHO_UNITS;
-	static constexpr LongIndex  PRONG_COUNT	  =		Initial::PRONG_COUNT +	Remaining::PRONG_COUNT;
+	static constexpr LongIndex  REVERSE_DEPTH	= Max<Initial::REVERSE_DEPTH,	Remaining::REVERSE_DEPTH>::VALUE;
+	static constexpr ShortIndex COMPO_REGIONS	=	  Initial::COMPO_REGIONS  + Remaining::COMPO_REGIONS;
+	static constexpr LongIndex  COMPO_PRONGS	=	  Initial::COMPO_PRONGS   + Remaining::COMPO_PRONGS;
+	static constexpr ShortIndex ORTHO_REGIONS	=	  Initial::ORTHO_REGIONS  + Remaining::ORTHO_REGIONS;
+	static constexpr ShortIndex ORTHO_UNITS		=	  Initial::ORTHO_UNITS    + Remaining::ORTHO_UNITS;
 
-	static constexpr LongIndex  STATE_COUNT	  = StateList::SIZE;
-	static constexpr ShortIndex REGION_COUNT  = RegionList::SIZE;
+	static constexpr LongIndex  ACTIVE_BITS		= Max<Initial::ACTIVE_BITS,		Remaining::ACTIVE_BITS>::VALUE;
+	static constexpr LongIndex  RESUMABLE_BITS	=	  Initial::RESUMABLE_BITS + Remaining::RESUMABLE_BITS;
+
+	static constexpr LongIndex  STATE_COUNT		= StateList::SIZE;
+	static constexpr ShortIndex REGION_COUNT	= RegionList::SIZE;
 };
 
 template <typename TInitial>
-struct _CSF<TInitial> {
-	using Initial			= Wrap<TInitial>;
+struct CSI_<TInitial> {
+	using Initial			= WrapInfo<TInitial>;
 	using StateList			= typename Initial::StateList;
 	using RegionList		= typename Initial::RegionList;
 
-	static constexpr LongIndex  REVERSE_DEPTH = Initial::REVERSE_DEPTH;
-	static constexpr ShortIndex COMPO_COUNT	  = Initial::COMPO_COUNT;
-	static constexpr ShortIndex ORTHO_COUNT	  = Initial::ORTHO_COUNT;
-	static constexpr ShortIndex ORTHO_UNITS	  = Initial::ORTHO_UNITS;
-	static constexpr LongIndex  PRONG_COUNT	  = Initial::PRONG_COUNT;
+	static constexpr LongIndex  REVERSE_DEPTH	= Initial::REVERSE_DEPTH;
+	static constexpr ShortIndex COMPO_REGIONS	= Initial::COMPO_REGIONS;
+	static constexpr LongIndex  COMPO_PRONGS	= Initial::COMPO_PRONGS;
+	static constexpr ShortIndex ORTHO_REGIONS	= Initial::ORTHO_REGIONS;
+	static constexpr ShortIndex ORTHO_UNITS		= Initial::ORTHO_UNITS;
 
-	static constexpr LongIndex  STATE_COUNT	  = StateList::SIZE;
-	static constexpr ShortIndex REGION_COUNT  = RegionList::SIZE;
+	static constexpr LongIndex  ACTIVE_BITS		= Initial::ACTIVE_BITS;
+	static constexpr LongIndex  RESUMABLE_BITS	= Initial::RESUMABLE_BITS;
+
+	static constexpr LongIndex  STATE_COUNT		= StateList::SIZE;
+	static constexpr ShortIndex REGION_COUNT	= RegionList::SIZE;
 };
 
-template <RegionStrategy TStrategy, typename THead, typename... TSubStates>
-struct _CF final {
-	static constexpr RegionStrategy STRATEGY = TStrategy;
+template <Strategy TStrategy, typename THead, typename... TSubStates>
+struct CI_ final {
+	static constexpr Strategy STRATEGY = TStrategy;
 
 	using Head				= THead;
-	using State				= _SF<Head>;
-	using SubStates			= _CSF<TSubStates...>;
-	using StateList			= Merge<typename State::StateList, typename SubStates::StateList>;
-	using RegionList		= Merge<typename State::StateList, typename SubStates::RegionList>;
+	using HeadInfo			= SI_<Head>;
+	using SubStates			= CSI_<TSubStates...>;
+	using StateList			= Merge<typename HeadInfo::StateList, typename SubStates::StateList>;
+	using RegionList		= Merge<typename HeadInfo::StateList, typename SubStates::RegionList>;
 
-	static constexpr ShortIndex	WIDTH		  = sizeof...(TSubStates);
-	static constexpr LongIndex	REVERSE_DEPTH = SubStates::REVERSE_DEPTH + 1;
-	static constexpr ShortIndex	COMPO_COUNT	  = SubStates::COMPO_COUNT + 1;
-	static constexpr ShortIndex	ORTHO_COUNT	  = SubStates::ORTHO_COUNT;
-	static constexpr ShortIndex	ORTHO_UNITS	  = SubStates::ORTHO_UNITS;
-	static constexpr LongIndex	PRONG_COUNT	  = WIDTH + SubStates::PRONG_COUNT;
+	static constexpr ShortIndex	WIDTH			= sizeof...(TSubStates);
+	static constexpr LongIndex	REVERSE_DEPTH	= SubStates::REVERSE_DEPTH + 1;
+	static constexpr ShortIndex	COMPO_REGIONS	= SubStates::COMPO_REGIONS + 1;
+	static constexpr LongIndex	COMPO_PRONGS	= SubStates::COMPO_PRONGS + WIDTH;
+	static constexpr ShortIndex	ORTHO_REGIONS	= SubStates::ORTHO_REGIONS;
+	static constexpr ShortIndex	ORTHO_UNITS		= SubStates::ORTHO_UNITS;
 
-	static constexpr LongIndex	STATE_COUNT	  = StateList::SIZE;
-	static constexpr ShortIndex	REGION_COUNT  = RegionList::SIZE;
+	static constexpr LongIndex	WIDTH_BITS		= bitWidth(WIDTH);
+	static constexpr LongIndex  ACTIVE_BITS		= SubStates::ACTIVE_BITS	+ WIDTH_BITS;
+	static constexpr LongIndex  RESUMABLE_BITS	= SubStates::RESUMABLE_BITS + WIDTH_BITS + 1;
+
+	static constexpr LongIndex	STATE_COUNT		= StateList::SIZE;
+	static constexpr ShortIndex	REGION_COUNT	= RegionList::SIZE;
 };
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 template <typename TInitial, typename... TRemaining>
-struct _OSF<TInitial, TRemaining...> {
-	using Initial			= Wrap<TInitial>;
-	using Remaining			= _OSF<TRemaining...>;
+struct OSI_<TInitial, TRemaining...> {
+	using Initial			= WrapInfo<TInitial>;
+	using Remaining			= OSI_<TRemaining...>;
 	using StateList			= Merge<typename Initial::StateList,  typename Remaining::StateList>;
 	using RegionList		= Merge<typename Initial::RegionList, typename Remaining::RegionList>;
 
-	static constexpr LongIndex  REVERSE_DEPTH = Max<Initial::REVERSE_DEPTH, Remaining::REVERSE_DEPTH>::VALUE;
-	static constexpr ShortIndex COMPO_COUNT	  =		Initial::COMPO_COUNT +	Remaining::COMPO_COUNT;
-	static constexpr ShortIndex ORTHO_COUNT	  =		Initial::ORTHO_COUNT +	Remaining::ORTHO_COUNT;
-	static constexpr ShortIndex ORTHO_UNITS	  =		Initial::ORTHO_UNITS +	Remaining::ORTHO_UNITS;
-	static constexpr LongIndex  PRONG_COUNT	  =		Initial::PRONG_COUNT +	Remaining::PRONG_COUNT;
+	static constexpr LongIndex  REVERSE_DEPTH	= Max<Initial::REVERSE_DEPTH,	Remaining::REVERSE_DEPTH>::VALUE;
+	static constexpr ShortIndex COMPO_REGIONS	=	  Initial::COMPO_REGIONS  + Remaining::COMPO_REGIONS;
+	static constexpr LongIndex  COMPO_PRONGS	=	  Initial::COMPO_PRONGS   + Remaining::COMPO_PRONGS;
+	static constexpr ShortIndex ORTHO_REGIONS	=	  Initial::ORTHO_REGIONS  + Remaining::ORTHO_REGIONS;
+	static constexpr ShortIndex ORTHO_UNITS		=	  Initial::ORTHO_UNITS    + Remaining::ORTHO_UNITS;
+
+	static constexpr LongIndex  ACTIVE_BITS		=	  Initial::ACTIVE_BITS    + Remaining::ACTIVE_BITS;
+	static constexpr LongIndex  RESUMABLE_BITS	=	  Initial::RESUMABLE_BITS + Remaining::RESUMABLE_BITS;
 };
 
 template <typename TInitial>
-struct _OSF<TInitial> {
-	using Initial			= Wrap<TInitial>;
+struct OSI_<TInitial> {
+	using Initial			= WrapInfo<TInitial>;
 	using StateList			= typename Initial::StateList;
 	using RegionList		= typename Initial::RegionList;
 
-	static constexpr LongIndex  REVERSE_DEPTH = Initial::REVERSE_DEPTH;
-	static constexpr ShortIndex COMPO_COUNT	  = Initial::COMPO_COUNT;
-	static constexpr ShortIndex ORTHO_COUNT	  = Initial::ORTHO_COUNT;
-	static constexpr ShortIndex ORTHO_UNITS	  = Initial::ORTHO_UNITS;
-	static constexpr LongIndex  PRONG_COUNT	  = Initial::PRONG_COUNT;
+	static constexpr LongIndex  REVERSE_DEPTH	= Initial::REVERSE_DEPTH;
+	static constexpr ShortIndex COMPO_REGIONS	= Initial::COMPO_REGIONS;
+	static constexpr LongIndex  COMPO_PRONGS	= Initial::COMPO_PRONGS;
+	static constexpr ShortIndex ORTHO_REGIONS	= Initial::ORTHO_REGIONS;
+	static constexpr ShortIndex ORTHO_UNITS		= Initial::ORTHO_UNITS;
+
+	static constexpr LongIndex  ACTIVE_BITS		= Initial::ACTIVE_BITS;
+	static constexpr LongIndex  RESUMABLE_BITS	= Initial::RESUMABLE_BITS;
 };
 
 template <typename THead, typename... TSubStates>
-struct _OF final {
+struct OI_ final {
 	using Head				= THead;
-	using State				= _SF<Head>;
-	using SubStates			= _OSF<TSubStates...>;
-	using StateList			= Merge<typename State::StateList, typename SubStates::StateList>;
-	using RegionList		= Merge<typename State::StateList, typename SubStates::RegionList>;
+	using HeadInfo			= SI_<Head>;
+	using SubStates			= OSI_<TSubStates...>;
+	using StateList			= Merge<typename HeadInfo::StateList, typename SubStates::StateList>;
+	using RegionList		= Merge<typename HeadInfo::StateList, typename SubStates::RegionList>;
 
-	static constexpr ShortIndex WIDTH		  = sizeof...(TSubStates);
-	static constexpr LongIndex  REVERSE_DEPTH = SubStates::REVERSE_DEPTH + 1;
-	static constexpr ShortIndex COMPO_COUNT	  = SubStates::COMPO_COUNT;
-	static constexpr ShortIndex ORTHO_COUNT	  = SubStates::ORTHO_COUNT + 1;
-	static constexpr ShortIndex ORTHO_UNITS	  = SubStates::ORTHO_UNITS + (WIDTH + 7) / 8;
-	static constexpr LongIndex  PRONG_COUNT	  = SubStates::PRONG_COUNT;
+	static constexpr ShortIndex WIDTH			= sizeof...(TSubStates);
+	static constexpr LongIndex  REVERSE_DEPTH	= SubStates::REVERSE_DEPTH + 1;
+	static constexpr ShortIndex COMPO_REGIONS	= SubStates::COMPO_REGIONS;
+	static constexpr LongIndex  COMPO_PRONGS	= SubStates::COMPO_PRONGS;
+	static constexpr ShortIndex ORTHO_REGIONS	= SubStates::ORTHO_REGIONS + 1;
+	static constexpr ShortIndex ORTHO_UNITS		= SubStates::ORTHO_UNITS + (WIDTH + 7) / 8;
 
-	static constexpr LongIndex  STATE_COUNT	  = StateList::SIZE;
-	static constexpr ShortIndex REGION_COUNT  = RegionList::SIZE;
+	static constexpr LongIndex  ACTIVE_BITS		= SubStates::ACTIVE_BITS;
+	static constexpr LongIndex  RESUMABLE_BITS	= SubStates::RESUMABLE_BITS;
+
+	static constexpr LongIndex  STATE_COUNT		= StateList::SIZE;
+	static constexpr ShortIndex REGION_COUNT	= RegionList::SIZE;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template <typename TContext,
-		  typename TConfig,
-		  typename TStateList,
-		  typename TRegionList,
-		  LongIndex NCompoCount,
-		  LongIndex NOrthoCount,
-		  LongIndex NOrthoUnits,
-		  typename TPayload,
-		  LongIndex NTaskCapacity>
+template <typename TContext
+		, typename TConfig
+		, typename TStateList
+		, typename TRegionList
+		, LongIndex NCompoCount
+		, LongIndex NOrthoCount
+		, LongIndex NOrthoUnits
+		, LongIndex NSerialBits
+		HFSM2_IF_PLANS(, LongIndex NTaskCapacity)>
 struct ArgsT final {
 	using Context	 = TContext;
-	using Config	 = TConfig;
+
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	using Rank		 = typename TConfig::Rank;
+	using Utility	 = typename TConfig::Utility;
+	using RNG		 = typename TConfig::RNG;
+	using UP		 = typename TConfig::UP;
+#endif
+
+#ifdef HFSM2_ENABLE_LOG_INTERFACE
+	using Logger	 = typename TConfig::LoggerInterface;
+#endif
+
 	using StateList	 = TStateList;
 	using RegionList = TRegionList;
-	using Payload	 = TPayload;
-
-	using Utility	 = typename TConfig::Utility;
-	using UProng	 = typename TConfig::UProng;
 
 	static constexpr LongIndex  STATE_COUNT	  = StateList::SIZE;
-	static constexpr ShortIndex COMPO_COUNT	  = NCompoCount;
-	static constexpr ShortIndex ORTHO_COUNT	  = NOrthoCount;
+	static constexpr ShortIndex COMPO_REGIONS = NCompoCount;
+	static constexpr ShortIndex ORTHO_REGIONS = NOrthoCount;
 	static constexpr ShortIndex ORTHO_UNITS	  = NOrthoUnits;
+	static constexpr ShortIndex SERIAL_BITS	  = NSerialBits;
+
+#ifdef HFSM2_ENABLE_PLANS
 	static constexpr LongIndex  TASK_CAPACITY = NTaskCapacity;
+#endif
+
+#ifdef HFSM2_ENABLE_SERIALIZATION
+	using SerialBuffer			= StreamBuffer	<SERIAL_BITS>;
+	using WriteStream			= BitWriteStream<SERIAL_BITS>;
+	using ReadStream			= BitReadStream	<SERIAL_BITS>;
+#endif
+
+	HFSM2_IF_STRUCTURE_REPORT(using StructureStateInfos = Array<StructureStateInfo, STATE_COUNT>);
 };
 
 //------------------------------------------------------------------------------
 
-template <StateID, typename, typename>
-struct _S;
+template <StateID NStateID,
+		  ShortIndex NCompoIndex,
+		  ShortIndex NOrthoIndex,
+		  ShortIndex NOrthoUnit>
+struct I_ {
+	static constexpr StateID	STATE_ID	 = NStateID;
+	static constexpr ShortIndex COMPO_INDEX	 = NCompoIndex;
+	static constexpr ShortIndex ORTHO_INDEX	 = NOrthoIndex;
+	static constexpr ShortIndex ORTHO_UNIT	 = NOrthoUnit;
+};
 
-template <StateID, ShortIndex, ShortIndex, typename, RegionStrategy, typename, typename...>
-struct _C;
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-template <StateID, ShortIndex, ShortIndex, typename, RegionStrategy, ShortIndex, typename...>
-struct _CS;
+template <typename, typename, typename>
+struct S_;
 
-template <StateID, ShortIndex, ShortIndex, typename, typename, typename...>
-struct _O;
+template <typename, typename, Strategy, typename, typename...>
+struct C_;
 
-template <typename, typename, typename, typename>
-class _RW;
+template <typename, typename, Strategy, ShortIndex, typename...>
+struct CS_;
+
+template <typename, typename, typename, typename...>
+struct O_;
+
+template <typename, typename, ShortIndex, typename...>
+struct OS_;
+
+template <typename, typename>
+class RW_;
 
 //------------------------------------------------------------------------------
 
-template <StateID,	  ShortIndex,	 ShortIndex,	typename...>
+template <typename, typename...>
 struct MaterialT;
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, typename TH>
-struct MaterialT   <NS, NC, NO, TA, TH> {
-	using Type = _S<NS,			TA, TH>;
+template <typename TN, typename TA, typename TH>
+struct MaterialT   <TN, TA, TH> {
+	using Type = S_<TN, TA, TH>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, 			 typename... TS>
-struct MaterialT   <NS, NC, NO, TA, _CF<TG, void,	   TS...>> {
-	using Type = _C<NS, NC, NO, TA,		TG, Empty<TA>, TS...>;
+template <typename TN, typename TA, Strategy SG, 			  typename... TS>
+struct MaterialT   <TN, TA, CI_<SG, void,             TS...>> {
+	using Type = C_<TN, TA,     SG, StaticEmptyT<TA>, TS...>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, typename TH, typename... TS>
-struct MaterialT   <NS, NC, NO, TA, _CF<TG, TH,	TS...>> {
-	using Type = _C<NS, NC, NO, TA,		TG, TH,	TS...>;
+template <typename TN, typename TA, Strategy SG, typename TH, typename... TS>
+struct MaterialT   <TN, TA, CI_<SG, TH,	TS...>> {
+	using Type = C_<TN, TA,     SG, TH,	TS...>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA,			  typename... TS>
-struct MaterialT   <NS, NC, NO, TA, _OF<void,	   TS...>> {
-	using Type = _O<NS, NC, NO, TA,		Empty<TA>, TS...>;
+template <typename TN, typename TA,				 typename... TS>
+struct MaterialT   <TN, TA, OI_<void,			  TS...>> {
+	using Type = O_<TN, TA,     StaticEmptyT<TA>, TS...>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, typename TH, typename... TS>
-struct MaterialT   <NS, NC, NO, TA, _OF<TH,	 TS...>> {
-	using Type = _O<NS, NC, NO, TA,		TH,	 TS...>;
+template <typename TN, typename TA, typename TH, typename... TS>
+struct MaterialT   <TN, TA, OI_<TH,				  TS...>> {
+	using Type = O_<TN, TA,     TH,				  TS...>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename... TS>
-using Material = typename MaterialT<NS, NC, NO, TS...>::Type;
+template <typename TN, typename... TS>
+using Material = typename MaterialT<TN, TS...>::Type;
 
 //------------------------------------------------------------------------------
 
-template <typename TContext,
-		  typename TConfig,
-		  typename TPayload,
+template <typename TConfig,
 		  typename TApex>
-struct _RF final {
-	using Context		= TContext;
-	using Config		= TConfig;
-	using Payload		= TPayload;
+struct RF_ final {
+	using Context		= typename TConfig::Context;
 	using Apex			= TApex;
 
-	static constexpr LongIndex MAX_PLAN_TASKS	 = Config::MAX_PLAN_TASKS;
-	static constexpr LongIndex MAX_SUBSTITUTIONS = Config::MAX_SUBSTITUTIONS;
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	static constexpr LongIndex TASK_CAPACITY	 = Config::MAX_PLAN_TASKS != INVALID_LONG_INDEX ?
-													   Config::MAX_PLAN_TASKS : Apex::PRONG_COUNT * 2;
+	static constexpr LongIndex SUBSTITUTION_LIMIT= TConfig::SUBSTITUTION_LIMIT;
 
-	using Instance		= _RW<Context, Config, Payload, Apex>;
+#ifdef HFSM2_ENABLE_PLANS
+	static constexpr LongIndex TASK_CAPACITY	 = TConfig::TASK_CAPACITY != INVALID_LONG_INDEX ?
+													   TConfig::TASK_CAPACITY : Apex::COMPO_PRONGS * 2;
+#endif
 
-	static constexpr ShortIndex COMPO_COUNT		 = Apex::COMPO_COUNT;
-	static constexpr ShortIndex ORTHO_COUNT		 = Apex::ORTHO_COUNT;
+	static constexpr ShortIndex COMPO_REGIONS	 = Apex::COMPO_REGIONS;
+	static constexpr ShortIndex ORTHO_REGIONS	 = Apex::ORTHO_REGIONS;
 	static constexpr ShortIndex ORTHO_UNITS		 = Apex::ORTHO_UNITS;
 
-	using StateList		= Indexed<typename Apex::StateList>;
-	using RegionList	= Indexed<typename Apex::RegionList>;
+	static constexpr LongIndex  ACTIVE_BITS		 = Apex::ACTIVE_BITS;
+	static constexpr LongIndex  RESUMABLE_BITS	 = Apex::RESUMABLE_BITS;
 
-	using Args			= ArgsT<Context,
-								Config,
-								StateList,
-								RegionList,
-								COMPO_COUNT,
-								ORTHO_COUNT,
-								ORTHO_UNITS,
-								Payload,
-								TASK_CAPACITY>;
+	using StateList		= typename Apex::StateList;
+	using RegionList	= typename Apex::RegionList;
+
+	using Args			= ArgsT<Context
+							  , TConfig
+							  , StateList
+							  , RegionList
+							  , COMPO_REGIONS
+							  , ORTHO_REGIONS
+							  , ORTHO_UNITS
+							  , ACTIVE_BITS + RESUMABLE_BITS
+							  HFSM2_IF_PLANS(, TASK_CAPACITY)>;
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	using Instance		= RW_<TConfig, Apex>;
 
 	using Control		= ControlT	   <Args>;
 	using FullControl	= FullControlT <Args>;
 	using GuardControl	= GuardControlT<Args>;
 
-	using Bare			= BareT<Args>;
+	using Injection		= InjectionT<Args>;
 
-	using State			= Empty<Args>;
+	//----------------------------------------------------------------------
+
+	using DynamicState	= DynamicEmptyT<Args>;
 
 	template <typename... TInjections>
-	using StateT		= _B<TInjections...>;
+	using DynamicStateT	= DB_<TInjections...>;
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	using StaticState	= StaticEmptyT<Args>;
+
+	template <typename... TInjections>
+	using StaticStateT	= SB_<TInjections...>;
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	using State			= StaticState;
+
+	template <typename... TInjections>
+	using StateT		= StaticStateT<TInjections...>;
+
+	//----------------------------------------------------------------------
 
 	template <typename T>
 	static constexpr bool contains() {
@@ -322,45 +399,40 @@ struct _RF final {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, ShortIndex NI, typename T>
+template <typename TN, typename TA, Strategy SG, ShortIndex NI, typename T>
 struct CSubMaterialT;
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, ShortIndex NI, typename T>
-struct CSubMaterialT	 <NS, NC, NO, TA, TG, NI, _TL<T>> {
-	using Type = Material<NS, NC, NO, TA,			  T>;
+template <typename TN, typename TA, Strategy SG, ShortIndex NI, typename... TS>
+struct CSubMaterialT<TN, TA, SG, NI, ITL_<TS...>> {
+	using Type = CS_<TN, TA, SG, NI,	  TS...>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, ShortIndex NI, typename... TS>
-struct CSubMaterialT<NS, NC, NO, TA, TG, NI, _TL<TS...>> {
-	using Type = _CS<NS, NC, NO, TA, TG, NI,	 TS...>;
-};
-
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, ShortIndex NI, typename... TS>
-using CSubMaterial = typename CSubMaterialT<NS, NC, NO, TA, TG, NI, TS...>::Type;
+template <typename TN, typename TA, Strategy SG, ShortIndex NI, typename... TS>
+using CSubMaterial = typename CSubMaterialT<TN, TA, SG, NI, TS...>::Type;
 
 //------------------------------------------------------------------------------
 
 template <typename...>
-struct ForwardT;
+struct InfoT;
 
-template <StateID NS, typename TA, typename TH>
-struct ForwardT<  _S<NS, TA, TH>> {
-	using Type = _SF<		 TH>;
+template <typename TN, typename TA, typename TH>
+struct InfoT<S_<TN, TA, TH>> {
+	using Type = SI_<	TH>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, typename TH, typename... TS>
-struct ForwardT<_C<NS, NC, NO, TA, TG, TH, TS...>> {
-	using Type = _CF<			   TG, TH, TS...>;
+template <typename TN, typename TA, Strategy SG, typename TH, typename... TS>
+struct InfoT<C_<TN, TA, SG, TH, TS...>> {
+	using Type = CI_<	SG, TH, TS...>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, typename TH, typename... TS>
-struct ForwardT<_O<NS, NC, NO, TA, TH, TS...>> {
-	using Type = _OF<			   TH, TS...>;
+template <typename TN, typename TA, typename TH, typename... TS>
+struct InfoT<O_<TN, TA, TH, TS...>> {
+	using Type = OI_<	TH, TS...>;
 };
 
-template <StateID NS, ShortIndex NC, ShortIndex NO, typename TA, RegionStrategy TG, ShortIndex NI, typename... TS>
-struct ForwardT<_CS<NS, NC, NO, TA, TG, NI, TS...>> {
-	using Type = _CSF<						TS...>;
+template <typename TN, typename TA, Strategy SG, ShortIndex NI, typename... TS>
+struct InfoT<CS_<TN, TA, SG, NI, TS...>> {
+	using Type = CSI_<			 TS...>;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

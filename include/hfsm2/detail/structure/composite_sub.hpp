@@ -3,35 +3,38 @@ namespace detail {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-template <StateID NInitialID,
-		  ShortIndex NCompoIndex,
-		  ShortIndex NOrthoIndex,
+template <typename TIndices,
 		  typename TArgs,
-		  RegionStrategy TStrategy,
+		  Strategy TStrategy,
 		  ShortIndex NIndex,
 		  typename... TStates>
-struct _CS {
-	static constexpr StateID	INITIAL_ID	 = NInitialID;
-	static constexpr ShortIndex COMPO_INDEX	 = NCompoIndex;
-	static constexpr ShortIndex ORTHO_INDEX	 = NOrthoIndex;
-	static constexpr ShortIndex REGION_ID	 = COMPO_INDEX + ORTHO_INDEX;
-	static constexpr ShortIndex PRONG_INDEX	 = NIndex;
+struct CS_ final {
+	static_assert(sizeof...(TStates) >= 2, "");
 
-	static constexpr RegionStrategy STRATEGY = TStrategy;
+	using Indices		= TIndices;
+	static constexpr StateID	INITIAL_ID	= Indices::STATE_ID;
+	static constexpr ShortIndex COMPO_INDEX	= Indices::COMPO_INDEX;
+	static constexpr ShortIndex ORTHO_INDEX	= Indices::ORTHO_INDEX;
+	static constexpr ShortIndex ORTHO_UNIT	= Indices::ORTHO_UNIT;
+
+	static constexpr Strategy	STRATEGY	= TStrategy;
+
+	static constexpr ShortIndex REGION_ID	= COMPO_INDEX + ORTHO_INDEX;
+	static constexpr ShortIndex PRONG_INDEX	= NIndex;
 
 	using Args			= TArgs;
 
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	using Rank			= typename Args::Rank;
 	using Utility		= typename Args::Utility;
-	using UProng		= typename Args::UProng;
+	using UP			= typename Args::UP;
+#endif
+
 	using StateList		= typename Args::StateList;
 	using RegionList	= typename Args::RegionList;
-	using Payload		= typename Args::Payload;
 
-	using Request		= RequestT<Payload>;
-	using RequestType	= typename Request::Type;
-
-	using StateRegistry	= StateRegistryT<Args>;
-	using StateParents	= typename StateRegistry::StateParents;
+	using Registry		= RegistryT<Args>;
+	using StateParents	= typename Registry::StateParents;
 
 	using Control		= ControlT	   <Args>;
 	using PlanControl	= PlanControlT <Args>;
@@ -41,125 +44,146 @@ struct _CS {
 	static constexpr ShortIndex L_PRONG = PRONG_INDEX;
 
 	using LStates		= SplitL<TStates...>;
-	using LHalf			= CSubMaterial<INITIAL_ID,
-									   COMPO_INDEX,
-									   ORTHO_INDEX,
+	using LHalf			= CSubMaterial<I_<INITIAL_ID,
+										  COMPO_INDEX,
+										  ORTHO_INDEX,
+										  ORTHO_UNIT>,
 									   Args,
 									   STRATEGY,
 									   L_PRONG,
 									   LStates>;
-	using LHalfForward	= typename ForwardT<LHalf>::Type;
+	using LHalfInfo		= typename InfoT<LHalf>::Type;
 
 	static constexpr ShortIndex R_PRONG = PRONG_INDEX + LStates::SIZE;
 
 	using RStates		= SplitR<TStates...>;
-	using RHalf			= CSubMaterial<INITIAL_ID  + LHalfForward::STATE_COUNT,
-									   COMPO_INDEX + LHalfForward::COMPO_COUNT,
-									   ORTHO_INDEX + LHalfForward::ORTHO_COUNT,
+	using RHalf			= CSubMaterial<I_<INITIAL_ID  + LHalfInfo::STATE_COUNT,
+										  COMPO_INDEX + LHalfInfo::COMPO_REGIONS,
+										  ORTHO_INDEX + LHalfInfo::ORTHO_REGIONS,
+										  ORTHO_UNIT  + LHalfInfo::ORTHO_UNITS>,
 									   Args,
 									   STRATEGY,
 									   R_PRONG,
 									   RStates>;
 
-	HFSM_INLINE void   deepRegister			(StateRegistry& stateRegistry, const Parent parent);
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_EXPLICIT_MEMBER_SPECIALIZATION
+	template <typename T>
+	HFSM2_INLINE	   T& access();
+
+	template <typename T>
+	HFSM2_INLINE const T& access() const;
+#endif
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	HFSM_INLINE bool   deepForwardEntryGuard(GuardControl& control,							const ShortIndex prong);
-	HFSM_INLINE bool   deepEntryGuard		(GuardControl& control,							const ShortIndex prong);
+	HFSM2_INLINE void	 wideRegister				 (Registry& registry, const Parent parent);
 
-	HFSM_INLINE void   deepEnter			(PlanControl& control,							const ShortIndex prong);
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	HFSM_INLINE Status deepUpdate			(FullControl& control,							const ShortIndex prong);
+	HFSM2_INLINE bool	 wideForwardEntryGuard		 (GuardControl& control,							const ShortIndex prong);
+	HFSM2_INLINE bool	 wideEntryGuard				 (GuardControl& control,							const ShortIndex prong);
+
+	HFSM2_INLINE void	 wideConstruct				 (PlanControl&  control,							const ShortIndex prong);
+
+	HFSM2_INLINE void	 wideEnter					 (PlanControl&  control,							const ShortIndex prong);
+	HFSM2_INLINE void	 wideReenter				 (PlanControl&  control,							const ShortIndex prong);
+
+	HFSM2_INLINE Status	 wideUpdate					 (FullControl&  control,							const ShortIndex prong);
 
 	template <typename TEvent>
-	HFSM_INLINE Status deepReact			(FullControl& control,	const TEvent& event,	const ShortIndex prong);
+	HFSM2_INLINE Status	 wideReact					 (FullControl&  control, const TEvent& event,		const ShortIndex prong);
 
-	HFSM_INLINE bool   deepForwardExitGuard	(GuardControl& control,							const ShortIndex prong);
-	HFSM_INLINE bool   deepExitGuard		(GuardControl& control,							const ShortIndex prong);
+	HFSM2_INLINE bool	 wideForwardExitGuard		 (GuardControl& control,							const ShortIndex prong);
+	HFSM2_INLINE bool	 wideExitGuard				 (GuardControl& control,							const ShortIndex prong);
 
-	HFSM_INLINE void   deepExit				(PlanControl& control,							const ShortIndex prong);
+	HFSM2_INLINE void	 wideExit					 (PlanControl&  control,							const ShortIndex prong);
 
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	HFSM_INLINE void   deepForwardActive	(Control& control,	const RequestType request,	const ShortIndex prong);
-	HFSM_INLINE void   deepForwardRequest	(Control& control,	const RequestType request,	const ShortIndex prong);
+	HFSM2_INLINE void	 wideDestruct				 (PlanControl&  control,							const ShortIndex prong);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#if defined _MSC_VER || defined __clang_major__ && __clang_major__ >= 7
+	HFSM2_INLINE void	 wideForwardActive			 (Control&  control, const Request::Type request,	const ShortIndex prong);
+	HFSM2_INLINE void	 wideForwardRequest			 (Control&  control, const Request::Type request,	const ShortIndex prong);
 
-	template <RegionStrategy TG = STRATEGY>
-	HFSM_INLINE UProng deepRequestChange			 (Control& control,	const ShortIndex = INVALID_SHORT_INDEX);
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_EXPLICIT_MEMBER_SPECIALIZATION
+
+	template <Strategy = STRATEGY>
+	HFSM2_INLINE void	 wideRequestChange			 (Control&  control,								const ShortIndex = INVALID_SHORT_INDEX);
 
 	template <>
-	HFSM_INLINE UProng deepRequestChange<Composite>	 (Control& control,	const ShortIndex)		{ return deepRequestChangeComposite  (control);			}
+	HFSM2_INLINE void	 wideRequestChange<Composite>(Control&  control,								const ShortIndex)		{ wideRequestChangeComposite(control);			}
 
 	template <>
-	HFSM_INLINE UProng deepRequestChange<Resumable>	 (Control& control,	const ShortIndex prong)	{ return deepRequestChangeResumable  (control, prong);	}
-
-	template <>
-	HFSM_INLINE UProng deepRequestChange<Utilitarian>(Control& control,	const ShortIndex)		{ return deepRequestChangeUtilitarian(control);			}
+	HFSM2_INLINE void	 wideRequestChange<Resumable>(Control&  control,								const ShortIndex prong)	{ wideRequestChangeResumable(control, prong);	}
 
 #else
 
-	HFSM_INLINE UProng deepRequestChange			 (Control& control,	const ShortIndex = INVALID_SHORT_INDEX);
+	HFSM2_INLINE void	 wideRequestChange			 (Control&  control,								const ShortIndex = INVALID_SHORT_INDEX);
 
 #endif
 
-	HFSM_INLINE UProng deepRequestChangeComposite	 (Control& control);
-	HFSM_INLINE UProng deepRequestChangeResumable	 (Control& control,	const ShortIndex prong);
-	HFSM_INLINE UProng deepRequestChangeUtilitarian	 (Control& control);
+	HFSM2_INLINE void	 wideRequestChangeComposite	 (Control&  control);
+	HFSM2_INLINE void	 wideRequestChangeResumable	 (Control&  control,								const ShortIndex prong);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#if defined _MSC_VER || defined __clang_major__ && __clang_major__ >= 7
+	HFSM2_INLINE void	 wideRequestRemain			 (Registry& registry);
+	HFSM2_INLINE void	 wideRequestRestart			 (Registry& registry);
+	HFSM2_INLINE void	 wideRequestResume			 (Registry& registry,								const ShortIndex prong);
 
-	template <RegionStrategy TG = STRATEGY>
-	HFSM_INLINE UProng deepReportChange				 (Control& control,	const ShortIndex = INVALID_SHORT_INDEX);
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	template <>
-	HFSM_INLINE UProng deepReportChange<Composite>   (Control& control,	const ShortIndex)		{ return deepReportChangeComposite  (control);		}
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
 
-	template <>
-	HFSM_INLINE UProng deepReportChange<Resumable>   (Control& control,	const ShortIndex prong)	{ return deepReportChangeResumable  (control, prong);	}
+	HFSM2_INLINE UP		 wideReportChangeComposite	 (Control&  control);
+	HFSM2_INLINE UP		 wideReportChangeResumable	 (Control&  control,								const ShortIndex prong);
+	HFSM2_INLINE UP		 wideReportChangeUtilitarian (Control&  control);
+	HFSM2_INLINE Utility wideReportChangeRandom		 (Control&  control, Utility* const options, const Rank* const ranks, const Rank top);
 
-	template <>
-	HFSM_INLINE UProng deepReportChange<Utilitarian> (Control& control,	const ShortIndex)		{ return deepReportChangeUtilitarian(control);		}
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-#else
-
-	HFSM_INLINE UProng deepReportChange				 (Control& control,	const ShortIndex = INVALID_SHORT_INDEX);
+	HFSM2_INLINE UP		 wideReportUtilize			 (Control&  control);
+	HFSM2_INLINE Rank	 wideReportRank				 (Control&  control, Rank*	  const ranks);
+	HFSM2_INLINE Utility wideReportRandomize		 (Control&  control, Utility* const options, const Rank* const ranks, const Rank top);
 
 #endif
 
-	HFSM_INLINE UProng deepReportChangeComposite	 (Control& control);
-	HFSM_INLINE UProng deepReportChangeResumable	 (Control& control,	const ShortIndex prong);
-	HFSM_INLINE UProng deepReportChangeUtilitarian   (Control& control);
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 wideChangeToRequested		 (PlanControl& control, const ShortIndex prong);
+
+	//----------------------------------------------------------------------
+
+#ifdef HFSM2_ENABLE_SERIALIZATION
+	using WriteStream	= typename Args::WriteStream;
+	using ReadStream	= typename Args::ReadStream;
+
+	HFSM2_INLINE void	 wideSaveActive				 (const Registry& registry, WriteStream& stream,	const ShortIndex prong) const;
+	HFSM2_INLINE void	 wideSaveResumable			 (const Registry& registry, WriteStream& stream							  ) const;
+
+	HFSM2_INLINE void	 wideLoadRequested			 (      Registry& registry, ReadStream&  stream,	const ShortIndex prong) const;
+	HFSM2_INLINE void	 wideLoadResumable			 (      Registry& registry, ReadStream&  stream							  ) const;
+#endif
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-	HFSM_INLINE void   deepRequestRemain	(StateRegistry& stateRegistry);
-	HFSM_INLINE void   deepRequestRestart	(StateRegistry& stateRegistry);
-	HFSM_INLINE void   deepRequestResume	(StateRegistry& stateRegistry,					const ShortIndex prong);
-
-	HFSM_INLINE UProng deepReportUtilize	(Control& control);
-
-	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-	HFSM_INLINE void   deepEnterRequested	(PlanControl& control,							const ShortIndex prong);
-	HFSM_INLINE void   deepChangeToRequested(PlanControl& control,							const ShortIndex prong);
-
-#ifdef HFSM_ENABLE_STRUCTURE_REPORT
-	using RegionType		= typename StructureStateInfo::RegionType;
+#ifdef HFSM2_ENABLE_STRUCTURE_REPORT
+	using StructureStateInfos = typename Args::StructureStateInfos;
+	using RegionType		  = typename StructureStateInfo::RegionType;
 
 	static constexpr LongIndex NAME_COUNT = LHalf::NAME_COUNT + RHalf::NAME_COUNT;
 
-	void deepGetNames(const LongIndex parent,
+	void wideGetNames(const LongIndex parent,
 					  const RegionType region,
 					  const ShortIndex depth,
 					  StructureStateInfos& stateInfos) const;
 #endif
+
+	//----------------------------------------------------------------------
 
 	LHalf lHalf;
 	RHalf rHalf;
@@ -167,7 +191,158 @@ struct _CS {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+template <typename TIndices,
+		  typename TArgs,
+		  Strategy TStrategy,
+		  ShortIndex NIndex,
+		  typename TState>
+struct CS_<TIndices, TArgs, TStrategy, NIndex, TState> final {
+	using Indices		= TIndices;
+	static constexpr StateID	INITIAL_ID	= Indices::STATE_ID;
+	static constexpr ShortIndex COMPO_INDEX	= Indices::COMPO_INDEX;
+	static constexpr ShortIndex ORTHO_INDEX	= Indices::ORTHO_INDEX;
+	static constexpr ShortIndex ORTHO_UNIT	= Indices::ORTHO_UNIT;
+
+	static constexpr Strategy	STRATEGY	= TStrategy;
+
+	static constexpr ShortIndex REGION_ID	= COMPO_INDEX + ORTHO_INDEX;
+	static constexpr ShortIndex PRONG_INDEX	= NIndex;
+
+	using Args			= TArgs;
+
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	using Rank			= typename Args::Rank;
+	using Utility		= typename Args::Utility;
+	using UP			= typename Args::UP;
+#endif
+
+	using StateList		= typename Args::StateList;
+	using RegionList	= typename Args::RegionList;
+
+	using Registry		= RegistryT<Args>;
+	using StateParents	= typename Registry::StateParents;
+
+	using Control		= ControlT	   <Args>;
+	using PlanControl	= PlanControlT <Args>;
+	using FullControl	= FullControlT <Args>;
+	using GuardControl	= GuardControlT<Args>;
+
+	using State			= Material<I_<INITIAL_ID,
+									  COMPO_INDEX,
+									  ORTHO_INDEX,
+									  ORTHO_UNIT>,
+								   Args,
+								   TState>;
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_EXPLICIT_MEMBER_SPECIALIZATION
+	template <typename T>
+	HFSM2_INLINE	   T& access()					 { return state.template access<T>();	}
+
+	template <typename T>
+	HFSM2_INLINE const T& access() const			 { return state.template access<T>();	}
+#endif
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 wideRegister				 (Registry& registry, const Parent parent);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE bool	 wideForwardEntryGuard		 (GuardControl& control,							const ShortIndex prong);
+	HFSM2_INLINE bool	 wideEntryGuard				 (GuardControl& control,							const ShortIndex prong);
+
+	HFSM2_INLINE void	 wideConstruct				 (PlanControl&  control,							const ShortIndex prong);
+
+	HFSM2_INLINE void	 wideEnter					 (PlanControl&  control,							const ShortIndex prong);
+	HFSM2_INLINE void	 wideReenter				 (PlanControl&  control,							const ShortIndex prong);
+
+	HFSM2_INLINE Status	 wideUpdate					 (FullControl&  control,							const ShortIndex prong);
+
+	template <typename TEvent>
+	HFSM2_INLINE Status	 wideReact					 (FullControl&  control, const TEvent& event,		const ShortIndex prong);
+
+	HFSM2_INLINE bool	 wideForwardExitGuard		 (GuardControl& control,							const ShortIndex prong);
+	HFSM2_INLINE bool	 wideExitGuard				 (GuardControl& control,							const ShortIndex prong);
+
+	HFSM2_INLINE void	 wideExit					 (PlanControl&  control,							const ShortIndex prong);
+
+	HFSM2_INLINE void	 wideDestruct				 (PlanControl&  control,							const ShortIndex prong);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 wideForwardActive			 (Control&  control, const Request::Type request,	const ShortIndex prong);
+	HFSM2_INLINE void	 wideForwardRequest			 (Control&  control, const Request::Type request,	const ShortIndex prong);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 wideRequestChangeComposite	 (Control&  control);
+	HFSM2_INLINE void	 wideRequestChangeResumable	 (Control&  control,	 								const ShortIndex prong);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 wideRequestRemain			 (Registry& registry);
+	HFSM2_INLINE void	 wideRequestRestart			 (Registry& registry);
+	HFSM2_INLINE void	 wideRequestResume			 (Registry& registry,								const ShortIndex prong);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+
+	HFSM2_INLINE UP		 wideReportChangeComposite	 (Control&  control);
+	HFSM2_INLINE UP		 wideReportChangeResumable	 (Control&  control,								const ShortIndex prong);
+	HFSM2_INLINE UP		 wideReportChangeUtilitarian (Control&  control);
+	HFSM2_INLINE Utility wideReportChangeRandom		 (Control&  control,	 Utility* const options, const Rank* const ranks, const Rank top);
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - -
+
+	HFSM2_INLINE UP		 wideReportUtilize			 (Control&  control);
+	HFSM2_INLINE Rank	 wideReportRank				 (Control&  control,	 Rank*	  const ranks);
+	HFSM2_INLINE Utility wideReportRandomize		 (Control&  control,	 Utility* const options, const Rank* const ranks, const Rank top);
+
+#endif
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+	HFSM2_INLINE void	 wideChangeToRequested		 (PlanControl& control,								const ShortIndex prong);
+
+	//----------------------------------------------------------------------
+
+#ifdef HFSM2_ENABLE_SERIALIZATION
+	using WriteStream	= typename Args::WriteStream;
+	using ReadStream	= typename Args::ReadStream;
+
+	HFSM2_INLINE void	wideSaveActive				 (const Registry& registry, WriteStream& stream, const ShortIndex prong) const;
+	HFSM2_INLINE void	wideSaveResumable			 (const Registry& registry, WriteStream& stream						   ) const;
+
+	HFSM2_INLINE void	wideLoadRequested			 (		Registry& registry, ReadStream&  stream, const ShortIndex prong) const;
+	HFSM2_INLINE void	wideLoadResumable			 (		Registry& registry, ReadStream&  stream						   ) const;
+#endif
+
+	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#ifdef HFSM2_ENABLE_STRUCTURE_REPORT
+	using StructureStateInfos = typename Args::StructureStateInfos;
+	using RegionType		  = typename StructureStateInfo::RegionType;
+
+	static constexpr LongIndex NAME_COUNT = State::NAME_COUNT;
+
+	void wideGetNames(const LongIndex parent,
+					  const RegionType region,
+					  const ShortIndex depth,
+					  StructureStateInfos& stateInfos) const;
+#endif
+
+	//----------------------------------------------------------------------
+
+	State state;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
 }
 }
 
-#include "composite_sub.inl"
+#include "composite_sub_1.inl"
+#include "composite_sub_2.inl"

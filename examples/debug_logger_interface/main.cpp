@@ -39,19 +39,31 @@
 //	---------- done! ---------
 
 // enable logger functionality
-#define HFSM_ENABLE_LOG_INTERFACE
+#define HFSM2_ENABLE_LOG_INTERFACE
 #include <hfsm2/machine.hpp>
 
 #include <iostream>
 
 //------------------------------------------------------------------------------
 
-// data shared between FSM states and outside code
-struct Context {};
-
 // convenience typedef
-using M = hfsm2::MachineT<Context>;
+using M = hfsm2::Machine;
 
+#if 0
+
+// states need to be forward declared to be used in FSM struct declaration
+struct Top;
+struct From;
+struct To;
+
+using FSM = M::Root<Top,
+				From,
+				To
+			>;
+
+#else
+
+// alternatively, some macro magic can be invoked to simplify FSM structure declaration
 #define S(s) struct s
 
 using FSM = M::Root<S(Top),
@@ -60,6 +72,8 @@ using FSM = M::Root<S(Top),
 			>;
 
 #undef S
+
+#endif
 
 //------------------------------------------------------------------------------
 
@@ -74,19 +88,21 @@ static_assert(FSM::stateId<To>()	==  2, "");
 struct Logger
 	: hfsm2::LoggerInterface
 {
-	void recordMethod(const hfsm2::StateID /*origin*/,
+	void recordMethod(Context& /*context*/,
+					  const hfsm2::StateID /*origin*/,
 					  const Method method) override
 	{
 		std::cout //<< hfsm2::stateName(origin) << "::"
 				  << hfsm2::methodName(method) << "()\n";
 	}
 
-	void recordTransition(const hfsm2::StateID /*origin*/,
-						  const Transition transition,
+	void recordTransition(Context& /*context*/,
+						  const hfsm2::StateID /*origin*/,
+						  const TransitionType transitionType,
 						  const hfsm2::StateID /*target*/) override
 	{
 		std::cout //<< hfsm2::stateName(origin) << ": "
-				  << hfsm2::transitionName(transition) << "<"
+				  << hfsm2::transitionName(transitionType) << "<"
 				  //<< hfsm2::stateName(target) << ">()"
 				  "\n";
 	}
@@ -141,16 +157,13 @@ struct To
 
 int main() {
 	{
-		// shared data storage instance
-		Context context;
-
 		// logger
 		Logger logger;
 
 		std::cout << "\n---------- ctor: ---------\n\n";
 
 		// state machine instance - all initial states are activated
-		FSM::Instance machine(context, &logger);
+		FSM::Instance machine{&logger};
 
 		// output:
 		//	enter()

@@ -1,40 +1,9 @@
-#pragma once
-
-#if defined _DEBUG && _MSC_VER
-	#include <intrin.h>		// __debugbreak()
-#endif
+namespace hfsm2 {
 
 //------------------------------------------------------------------------------
 
-#if defined _DEBUG && defined _MSC_VER
-	#define HFSM_BREAK()			__debugbreak()
-	#define HFSM_CHECKED(x)			(!!(x) || (HFSM_BREAK(), 0))
-#else
-	#define HFSM_BREAK()			((void) 0)
-	#define HFSM_CHECKED(x)			x
-#endif
-
-#ifdef _DEBUG
-	#define HFSM_IF_DEBUG(...)		__VA_ARGS__
-	#define HFSM_UNLESS_DEBUG(...)
-	#define HFSM_DEBUG_OR(y, n)		y
-#else
-	#define HFSM_IF_DEBUG(...)
-	#define HFSM_UNLESS_DEBUG(...)	__VA_ARGS__
-	#define HFSM_DEBUG_OR(y, n)		n
-#endif
-
-#ifdef HFSM_ENABLE_ASSERT
-	#define HFSM_IF_ASSERT(...)		__VA_ARGS__
-	#define HFSM_ASSERT(x)			(!!(x) || (HFSM_BREAK(), 0))
-	#define HFSM_ASSERT_OR(y, n)	y
-#else
-	#define HFSM_IF_ASSERT(...)
-	#define HFSM_ASSERT(x)			((void) 0)
-	#define HFSM_ASSERT_OR(y, n)	n
-#endif
-
-namespace hfsm2 {
+struct EmptyContext {};
+struct EmptyPayload {};
 
 //------------------------------------------------------------------------------
 
@@ -59,42 +28,22 @@ static constexpr StateID	INVALID_STATE_ID	= INVALID_LONG_INDEX;
 
 namespace detail {
 
-HFSM_IF_DEBUG(struct None {});
-
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-HFSM_INLINE
+HFSM2_INLINE
 void
 fill(T& a, const char value) {
 	memset(&a, (int) value, sizeof(a));
 }
 
-////////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
 
 template <typename T, unsigned NCount>
 constexpr
 unsigned
 count(const T(&)[NCount]) {
 	return NCount;
-}
-
-//------------------------------------------------------------------------------
-
-template <typename T, unsigned NCapacity>
-HFSM_INLINE
-const T*
-end(const T(& a)[NCapacity]) {
-	return &a[NCapacity];
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-template <typename TReturn, typename T, unsigned NCapacity>
-HFSM_INLINE
-const TReturn*
-end(const T(& a)[NCapacity]) {
-	return reinterpret_cast<const TReturn*>(&a[NCapacity]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +53,7 @@ struct Min {
 	static constexpr auto VALUE = N1 < N2 ? N1 : N2;
 };
 
-//------------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 template <int N1, int N2>
 struct Max {
@@ -113,8 +62,16 @@ struct Max {
 
 //------------------------------------------------------------------------------
 
+template <typename T>
+constexpr
+T
+min(const T t1, const T t2) { return t1 < t2 ? t1 : t2; }
+
+
+//------------------------------------------------------------------------------
+
 template <unsigned NCapacity>
-struct UnsignedIndex {
+struct UnsignedCapacityT {
 	static constexpr LongIndex CAPACITY = NCapacity;
 
 	using Type = typename std::conditional<CAPACITY <= UINT8_MAX,  uint8_t,
@@ -124,6 +81,76 @@ struct UnsignedIndex {
 
 	static_assert(CAPACITY <= UINT64_MAX, "STATIC ASSERT");
 };
+
+template <unsigned NCapacity>
+using UnsignedCapacity = typename UnsignedCapacityT<NCapacity>::Type;
+
+//------------------------------------------------------------------------------
+
+template <unsigned NBitWidth>
+struct UnsignedBitWidthT {
+	static constexpr ShortIndex BIT_WIDTH = NBitWidth;
+
+	using Type = typename std::conditional<BIT_WIDTH <= 8,  uint8_t,
+				 typename std::conditional<BIT_WIDTH <= 16, uint16_t,
+				 typename std::conditional<BIT_WIDTH <= 32, uint32_t,
+															uint64_t>::type>::type>::type;
+
+	static_assert(BIT_WIDTH <= 64, "STATIC ASSERT");
+};
+
+template <unsigned NCapacity>
+using UnsignedBitWidth = typename UnsignedBitWidthT<NCapacity>::Type;
+
+//------------------------------------------------------------------------------
+
+constexpr
+LongIndex
+roundUp(const LongIndex x,
+		const LongIndex to)
+{
+	return (x + (to - 1)) / to;
+}
+
+//------------------------------------------------------------------------------
+
+constexpr
+ShortIndex
+bitWidth(const ShortIndex x) {
+	return x <=   2 ? 1 :
+		   x <=   4 ? 2 :
+		   x <=   8 ? 3 :
+		   x <=  16 ? 4 :
+		   x <=  32 ? 5 :
+		   x <=  64 ? 6 :
+		   x <= 128 ? 7 :
+					  8 ;
+}
+
+//------------------------------------------------------------------------------
+
+template <typename TTo, typename TFrom>
+void
+overwrite(TTo& to, const TFrom& from) {
+	static_assert(sizeof(TTo) == sizeof(TFrom), "STATIC ASSERT");
+
+#if defined(__GNUC__) || defined(__GNUG__)
+	memcpy  (&to,			  &from, sizeof(from));
+#else
+	memcpy_s(&to, sizeof(to), &from, sizeof(from));
+#endif
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+template <typename TO, typename TI>
+TO convert(const TI& in) {
+	TO out;
+
+	overwrite(out, in);
+
+	return out;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

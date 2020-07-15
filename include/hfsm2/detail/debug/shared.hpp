@@ -1,39 +1,58 @@
-#pragma once
-
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace hfsm2 {
 
-enum class Method : ShortIndex {
+enum class Method : uint8_t {
+	NONE,
+
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	RANK,
 	UTILITY,
+#endif
+
 	ENTRY_GUARD,
+	CONSTRUCT,
 	ENTER,
+	REENTER,
 	UPDATE,
 	REACT,
 	EXIT_GUARD,
 	EXIT,
+	DESTRUCT,
+
+#ifdef HFSM2_ENABLE_PLANS
 	PLAN_SUCCEEDED,
 	PLAN_FAILED,
+#endif
 
 	COUNT
 };
 
-enum class Transition : ShortIndex {
+enum class TransitionType : uint8_t {
 	CHANGE,
 	RESTART,
 	RESUME,
+
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
 	UTILIZE,
+	RANDOMIZE,
+#endif
+
 	SCHEDULE,
 
 	COUNT
 };
 
-enum class StatusEvent : ShortIndex {
+#ifdef HFSM2_ENABLE_PLANS
+
+enum class StatusEvent : uint8_t {
 	SUCCEEDED,
 	FAILED,
 
 	COUNT
 };
+
+#endif
 
 //------------------------------------------------------------------------------
 
@@ -67,18 +86,30 @@ static inline
 const char*
 methodName(const Method method) {
 	switch (method) {
-		case Method::ENTRY_GUARD:		return "entryGuard";
-		case Method::ENTER:				return "enter";
-		case Method::UPDATE:			return "update";
-		case Method::REACT:				return "react";
-		case Method::EXIT_GUARD:		return "exitGuard";
-		case Method::EXIT:				return "exit";
-		case Method::PLAN_SUCCEEDED:	return "planSucceeded";
-		case Method::PLAN_FAILED:		return "planFailed";
 
-		default:
-			HFSM_BREAK();
-			return nullptr;
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	case Method::RANK:			 return "rank";
+	case Method::UTILITY:		 return "utility";
+#endif
+
+	case Method::ENTRY_GUARD:	 return "entryGuard";
+	case Method::ENTER:			 return "enter";
+	case Method::CONSTRUCT:		 return "construct";
+	case Method::REENTER:		 return "reenter";
+	case Method::UPDATE:		 return "update";
+	case Method::REACT:			 return "react";
+	case Method::EXIT_GUARD:	 return "exitGuard";
+	case Method::EXIT:			 return "exit";
+	case Method::DESTRUCT:		 return "destruct";
+
+#ifdef HFSM2_ENABLE_PLANS
+	case Method::PLAN_SUCCEEDED: return "planSucceeded";
+	case Method::PLAN_FAILED:	 return "planFailed";
+#endif
+
+	default:
+		HFSM2_BREAK();
+		return nullptr;
 	}
 }
 
@@ -86,17 +117,22 @@ methodName(const Method method) {
 
 static inline
 const char*
-transitionName(const Transition transition) {
-	switch (transition) {
-		case Transition::CHANGE:		return "changeTo";
-		case Transition::RESTART:		return "restart";
-		case Transition::RESUME:		return "resume";
-		case Transition::UTILIZE:		return "utilize";
-		case Transition::SCHEDULE:		return "schedule";
+transitionName(const TransitionType transitionType) {
+	switch (transitionType) {
+	case TransitionType::CHANGE:	return "changeTo";
+	case TransitionType::RESTART:	return "restart";
+	case TransitionType::RESUME:	return "resume";
 
-		default:
-			HFSM_BREAK();
-			return nullptr;
+#ifdef HFSM2_ENABLE_UTILITY_THEORY
+	case TransitionType::UTILIZE:	return "utilize";
+	case TransitionType::RANDOMIZE:	return "randomize";
+#endif
+
+	case TransitionType::SCHEDULE:	return "schedule";
+
+	default:
+		HFSM2_BREAK();
+		return nullptr;
 	}
 }
 

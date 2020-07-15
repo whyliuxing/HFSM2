@@ -22,24 +22,15 @@
     <Filter Include="test\shared">
       <UniqueIdentifier>{f563aa00-7f4b-4d66-ba7d-cdf5e4ea2843}</UniqueIdentifier>
     </Filter>
+    <Filter Include="hfsm\detail\root">
+      <UniqueIdentifier>{6e05f3be-0022-4b21-8f00-73628be91819}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\test\main.cpp">
       <Filter>test</Filter>
     </ClCompile>
     <ClCompile Include="..\..\test\test_internal_transitions.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\test\test_state_data.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\test\test_planner.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\test\deprecated_test.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\test\test_guard.cpp">
       <Filter>test</Filter>
     </ClCompile>
     <ClCompile Include="..\..\test\test_delayed_teardown.cpp">
@@ -51,61 +42,61 @@
     <ClCompile Include="..\..\test\shared\test_list.cpp">
       <Filter>test\shared</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\test\shared\test_object_pool.cpp">
-      <Filter>test\shared</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\test\test_self_transitions.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\test\shared.cpp">
       <Filter>test</Filter>
     </ClCompile>
     <ClCompile Include="..\..\test\test_composite_bst.cpp">
       <Filter>test</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\test\test_utility.cpp">
+    <ClCompile Include="..\..\test\test_utilize.cpp">
       <Filter>test</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\test\test_resumable.cpp">
+    <ClCompile Include="..\..\test\test_resume.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_utility_regions.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_debug.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_ortho_units.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_randomize.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_access.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_stress.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_plans.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_guards.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_dynamic.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_orthogonal_root.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_replication.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\shared\test_bit_stream.cpp">
+      <Filter>test\shared</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test\test_serialization.cpp">
       <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\test\test_internal_transitions.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\test_planner.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\hfsm2\machine_dev.hpp">
       <Filter>hfsm</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\test_state_data.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\deprecated_test.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\test_guard.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\test_delayed_teardown.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\control.hpp">
-      <Filter>hfsm\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\injections.hpp">
-      <Filter>hfsm\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\plan.hpp">
-      <Filter>hfsm\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\plan_data.hpp">
-      <Filter>hfsm\detail</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\state_registry.hpp">
-      <Filter>hfsm\detail</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\hfsm2\detail\debug\logger_interface.hpp">
       <Filter>hfsm\detail\debug</Filter>
@@ -119,9 +110,6 @@
     <ClInclude Include="..\..\include\hfsm2\detail\shared\array.hpp">
       <Filter>hfsm\detail\shared</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\shared\array_view.hpp">
-      <Filter>hfsm\detail\shared</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\hfsm2\detail\shared\bit_array.hpp">
       <Filter>hfsm\detail\shared</Filter>
     </ClInclude>
@@ -131,26 +119,11 @@
     <ClInclude Include="..\..\include\hfsm2\detail\shared\list.hpp">
       <Filter>hfsm\detail\shared</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\shared\object_pool.hpp">
-      <Filter>hfsm\detail\shared</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\hfsm2\detail\shared\type_list.hpp">
       <Filter>hfsm\detail\shared</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\hfsm2\detail\shared\utility.hpp">
       <Filter>hfsm\detail\shared</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\test_self_transitions.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\shared.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\test_composite_bst.hpp">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\test\test_utility.hpp">
-      <Filter>test</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\hfsm2\detail\structure\composite.hpp">
       <Filter>hfsm\detail\structure</Filter>
@@ -167,36 +140,51 @@
     <ClInclude Include="..\..\include\hfsm2\detail\structure\orthogonal_sub.hpp">
       <Filter>hfsm\detail\structure</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\hfsm2\detail\structure\root.hpp">
-      <Filter>hfsm\detail\structure</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\hfsm2\detail\structure\state.hpp">
       <Filter>hfsm\detail\structure</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\test\test_resumable.hpp">
+    <ClInclude Include="..\..\include\hfsm2\detail\shared\random.hpp">
+      <Filter>hfsm\detail\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\structure\state_box.hpp">
+      <Filter>hfsm\detail\structure</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\structure\injections.hpp">
+      <Filter>hfsm\detail\structure</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\root\control.hpp">
+      <Filter>hfsm\detail\root</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\root\plan.hpp">
+      <Filter>hfsm\detail\root</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\root\plan_data.hpp">
+      <Filter>hfsm\detail\root</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\root\state_access.hpp">
+      <Filter>hfsm\detail\root</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\root.hpp">
+      <Filter>hfsm\detail</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\shared\bit_stream.hpp">
+      <Filter>hfsm\detail\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\root\registry.hpp">
+      <Filter>hfsm\detail\root</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\shared\macros_off.hpp">
+      <Filter>hfsm\detail\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\hfsm2\detail\shared\macros_on.hpp">
+      <Filter>hfsm\detail\shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\test\tools.hpp">
       <Filter>test</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\include\hfsm2\detail\control.inl">
-      <Filter>hfsm\detail</Filter>
-    </None>
-    <None Include="..\..\include\hfsm2\detail\injections.inl">
-      <Filter>hfsm\detail</Filter>
-    </None>
-    <None Include="..\..\include\hfsm2\detail\plan.inl">
-      <Filter>hfsm\detail</Filter>
-    </None>
-    <None Include="..\..\include\hfsm2\detail\plan_data.inl">
-      <Filter>hfsm\detail</Filter>
-    </None>
-    <None Include="..\..\include\hfsm2\detail\state_registry.inl">
-      <Filter>hfsm\detail</Filter>
-    </None>
     <None Include="..\..\include\hfsm2\detail\shared\array.inl">
-      <Filter>hfsm\detail\shared</Filter>
-    </None>
-    <None Include="..\..\include\hfsm2\detail\shared\array_view.inl">
       <Filter>hfsm\detail\shared</Filter>
     </None>
     <None Include="..\..\include\hfsm2\detail\shared\bit_array.inl">
@@ -208,13 +196,7 @@
     <None Include="..\..\include\hfsm2\detail\shared\list.inl">
       <Filter>hfsm\detail\shared</Filter>
     </None>
-    <None Include="..\..\include\hfsm2\detail\shared\object_pool.inl">
-      <Filter>hfsm\detail\shared</Filter>
-    </None>
     <None Include="..\..\include\hfsm2\detail\structure\composite.inl">
-      <Filter>hfsm\detail\structure</Filter>
-    </None>
-    <None Include="..\..\include\hfsm2\detail\structure\composite_sub.inl">
       <Filter>hfsm\detail\structure</Filter>
     </None>
     <None Include="..\..\include\hfsm2\detail\structure\orthogonal.inl">
@@ -226,11 +208,44 @@
     <None Include="..\..\include\hfsm2\detail\structure\orthogonal_sub_2.inl">
       <Filter>hfsm\detail\structure</Filter>
     </None>
-    <None Include="..\..\include\hfsm2\detail\structure\root.inl">
-      <Filter>hfsm\detail\structure</Filter>
-    </None>
     <None Include="..\..\include\hfsm2\detail\structure\state.inl">
       <Filter>hfsm\detail\structure</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\structure\composite_sub_1.inl">
+      <Filter>hfsm\detail\structure</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\structure\composite_sub_2.inl">
+      <Filter>hfsm\detail\structure</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\shared\random.inl">
+      <Filter>hfsm\detail\shared</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\structure\state_box.inl">
+      <Filter>hfsm\detail\structure</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\structure\injections.inl">
+      <Filter>hfsm\detail\structure</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\root\control.inl">
+      <Filter>hfsm\detail\root</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\root\plan.inl">
+      <Filter>hfsm\detail\root</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\root\plan_data.inl">
+      <Filter>hfsm\detail\root</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\root.inl">
+      <Filter>hfsm\detail</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\shared\bit_stream.inl">
+      <Filter>hfsm\detail\shared</Filter>
+    </None>
+    <None Include="..\..\include\hfsm2\detail\root\registry.inl">
+      <Filter>hfsm\detail\root</Filter>
+    </None>
+    <None Include="..\..\test\tools.inl">
+      <Filter>test</Filter>
     </None>
   </ItemGroup>
 </Project>
